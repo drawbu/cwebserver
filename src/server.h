@@ -3,7 +3,22 @@
 #include <linux/limits.h>
 #include <netinet/in.h>
 
+#define LENOF(x) (sizeof (x) / sizeof *(x))
 #define DEF_ARR(type) struct { size_t size, alloc; type *arr; }
+
+enum request_method_e {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+};
+
+static const char *const request_type_str[] = {
+    [GET] = "GET",
+    [POST] = "POST",
+    [PUT] = "PUT",
+    [DELETE] = "DELETE",
+};
 
 typedef struct {
     short port;
@@ -20,4 +35,9 @@ typedef struct {
     int fd;
     server_t *server;
     DEF_ARR(header_t) headers;
+    enum request_method_e method;
+    char *path;
 } request_t;
+
+void *append_to_array(void *array, void *elem, size_t size);
+void handle_client(request_t *args);

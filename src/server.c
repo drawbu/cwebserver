@@ -1,6 +1,5 @@
 #include "server.h"
 
-#include <ctype.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -9,7 +8,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static void *append_to_array(void *array, void *elem, size_t size)
+void *append_to_array(void *array, void *elem, size_t size)
 {
     DEF_ARR(uint8_t) *arr = array;
 
@@ -22,57 +21,6 @@ static void *append_to_array(void *array, void *elem, size_t size)
     memcpy(arr->arr + (arr->size * size), elem, size);
     arr->size += 1;
     return array;
-}
-
-static void parse_request(request_t *req, char *buffer)
-{
-    if (req == NULL || buffer == NULL)
-        return;
-    printf("Parsing request\n");
-    strsep(&buffer, "\n");
-    while (1) {
-        if (buffer == NULL)
-            break;
-        header_t header = {0};
-        char *line = strsep(&buffer, "\n");
-        if (line == NULL)
-            break;
-        char *value = line;
-        char *key = strsep(&value, ":");
-        if (key == NULL || value == NULL)
-            break;
-        header.key = key;
-        while (isspace(*value))
-            value++;
-        header.value = value;
-        printf("key=%s, value=%s\n", header.key, header.value);
-        append_to_array(&req->headers, &header, sizeof header);
-    }
-}
-
-static void handle_client(request_t *args)
-{
-    char *buffer = malloc(BUFSIZ * sizeof(char));
-
-    if (buffer == NULL) {
-        perror("malloc");
-        return;
-    }
-    ssize_t bytes_read = recv(args->fd, buffer, BUFSIZ, 0);
-    printf("Received %ld bytes\n\n%s", bytes_read, buffer);
-
-    parse_request(args, buffer);
-
-    char *response =
-        "HTTP/1.1 200 OK\n"
-        "Content-Type: text/html\n"
-        "\n"
-        "<!DOCTYPE html> <body>hello world</body>\n";
-    size_t response_len = strlen(response);
-    send(args->fd, response, response_len, 0);
-    free(buffer);
-    close(args->fd);
-    free(args);
 }
 
 int main(int argc, char *argv[])
@@ -134,6 +82,7 @@ int main(int argc, char *argv[])
         }
         memset(req, 0, sizeof *req);
         req->fd = clientfd;
+        req->server = &serv;
         pthread_t thread = 0;
         pthread_create(&thread, NULL, (void *(*)(void *))handle_client, req);
         pthread_detach(thread);
