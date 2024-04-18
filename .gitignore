@@ -1,2 +1,9 @@
+# Build
 /.build/
+/result
+
+# Binaries
 /server
+/asan
+/prof
+/unit_tests

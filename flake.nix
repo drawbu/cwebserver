@@ -8,21 +8,32 @@
     inputs.utils.lib.eachDefaultSystem (system: let
       pkgs = inputs.nixpkgs.legacyPackages.${system};
       cc = pkgs.gcc12;
-    in {
+    in rec {
       formatter = pkgs.alejandra;
 
       devShells.default = pkgs.mkShell {
-        packages =
-          [cc]
-          ++ (with pkgs; [
-            glibc
-            gnumake
-            criterion
-            gcovr
-            valgrind
-            bear
-            gdb
-          ]);
+        packages = with pkgs; [
+          criterion
+          gcovr
+          valgrind
+          bear
+          gdb
+        ];
+
+        inputsFrom = [packages.default];
+      };
+
+      packages = {
+        default = packages.server;
+        server = pkgs.stdenv.mkDerivation {
+          name = "server";
+          src = ./.;
+          buildInputs = [cc] ++ (with pkgs; [glibc gnumake]);
+          installPhase = ''
+            mkdir -p $out/bin
+            install -D server $out/bin/server
+          '';
+        };
       };
     });
 }
