@@ -4,16 +4,20 @@
 
 #define DEFAULT_MIME "application/octet-stream"
 
-static const struct {
+// This array is sorted to use binary search
+static const struct mime_type_s {
     const char *ext;
     const char *mime;
 } COMMON_TYPES[] = {
+    {"3g2", "video/3gpp2; audio/3gpp2"},
+    {"3gp", "video/3gpp; audio/3gpp"},
+    {"7z", "application/x-7z-compressed"},
     {"aac", "audio/aac"},
     {"abw", "application/x-abiword"},
     {"apng", "image/apng"},
     {"arc", "application/x-freearc"},
-    {"avif", "image/avif"},
     {"avi", "video/x-msvideo"},
+    {"avif", "image/avif"},
     {"azw", "application/vnd.amazon.ebook"},
     {"bin", "application/octet-stream"},
     {"bmp", "image/bmp"},
@@ -27,8 +31,8 @@ static const struct {
     {"docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
     {"eot", "application/vnd.ms-fontobject"},
     {"epub", "application/epub+zip"},
-    {"gz", "application/gzip"},
     {"gif", "image/gif"},
+    {"gz", "application/gzip"},
     {"html", "text/html"},
     {"ico", "image/vnd.microsoft.icon"},
     {"ics", "text/calendar"},
@@ -53,9 +57,9 @@ static const struct {
     {"ogx", "application/ogg"},
     {"opus", "audio/opus"},
     {"otf", "font/otf"},
-    {"png", "image/png"},
     {"pdf", "application/pdf"},
     {"php", "application/x-httpd-php"},
+    {"png", "image/png"},
     {"ppt", "application/vnd.ms-powerpoint"},
     {"pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"},
     {"rar", "application/vnd.rar"},
@@ -81,7 +85,4 @@ static const struct {
     {"xml", "application/xml"},
     {"xul", "application/vnd.mozilla.xul+xml"},
     {"zip", "application/zip"},
-    {"3gp", "video/3gpp; audio/3gpp"},
-    {"3g2", "video/3gpp2; audio/3gpp2"},
-    {"7z", "application/x-7z-compressed"}
 };

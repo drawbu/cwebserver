@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "common_types.h"
 #include "debug.h"
 #include "server.h"
 
@@ -48,10 +49,7 @@ static char *open_file(size_t *size, const char *path, struct response_s *res)
     size_t w = sprintf(content_lenght.value, "%ld", *size);
     content_lenght.value[w] = '\0';
 
-    append_to_array(
-        &res->headers,
-        &content_lenght,
-        sizeof(header_t));
+    append_to_array(&res->headers, &content_lenght, sizeof(header_t));
 
     return buffer;
 }
@@ -83,6 +81,36 @@ static char *create_response(
     return buf.arr;
 }
 
+static int compare(const char *needle, const struct mime_type_s *item)
+{
+    return strcmp(needle, item->ext);
+}
+
+static void init_headers(request_t *args, struct response_s *res)
+{
+    res->protocol = "HTTP/1.1";
+    res->code = "200";
+    res->message = "OK";
+
+    char *ext = strrchr(args->path, '.');
+    const char *type = "text/html";
+    if (ext != NULL && *ext != '\0') {
+        struct mime_type_s *item = bsearch(
+            ext + 1, COMMON_TYPES, LENOF(COMMON_TYPES), sizeof(COMMON_TYPES[0]),
+            (int (*)(const void *, const void *))compare);
+        if (item != NULL)
+            type = item->mime;
+    }
+
+    append_to_array(
+        &res->headers,
+        &(header_t){
+            .key = strdup("Content-Type"),
+            .value = strdup(type),
+        },
+        sizeof(header_t));
+}
+
 int response_to_client(request_t *args)
 {
     char *path = malloc(PATH_MAX * sizeof(char));
@@ -94,17 +122,7 @@ int response_to_client(request_t *args)
     strcat(path, args->path);
 
     struct response_s res = {0};
-    res.protocol = "HTTP/1.1";
-    res.code = "200";
-    res.message = "OK";
-
-    append_to_array(
-        &res.headers,
-        &(header_t){
-            .key = strdup("Content-Type"),
-            .value = strdup("text/html"),
-        },
-        sizeof(header_t));
+    init_headers(args, &res);
 
     size_t filesize = 0;
     char *filebuf = open_file(&filesize, path, &res);
