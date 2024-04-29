@@ -52,45 +52,13 @@ static void parse_request(request_t *req, char *buffer)
     }
 }
 
-static bool file_exists(const char *filename)
-{
-    struct stat buffer;
-    return (stat(filename, &buffer) == 0) && S_ISREG(buffer.st_mode);
-}
-
-static void open_file(char *buffer, size_t *size, const char *path)
-{
-    char *filebuf = malloc(BUFSIZ * sizeof(char));
-    size_t filesize = 0;
-
-    if (filebuf == NULL) {
-        perror("malloc");
-        return;
-    }
-    if (!file_exists(path)) {
-        DEBUG_MSG("File not found");
-        static const char err[] = "404 Not Found\n";
-        strcpy(filebuf, err);
-        filesize = sizeof err;
-    } else {
-        int fd = open(path, O_RDONLY);
-        DEBUG("file fd: %d", fd);
-        filesize = read(fd, filebuf, BUFSIZ);
-        close(fd);
-    }
-    *size += sprintf(buffer + *size, "Content-Length: %ld\n\n", filesize);
-    memcpy(buffer + *size, filebuf, filesize);
-    *size += filesize;
-    free(filebuf);
-}
-
-void handle_client(request_t *args)
+void *handle_client(request_t *args)
 {
     char *buffer = malloc(BUFSIZ * sizeof(char));
 
     if (buffer == NULL) {
         perror("malloc");
-        return;
+        return NULL;
     }
 
     read(args->fd, buffer, BUFSIZ);
@@ -98,32 +66,11 @@ void handle_client(request_t *args)
     parse_request(args, buffer);
     DEBUG("Method: %s", request_type_str[args->method]);
     DEBUG("Path: %s", args->path);
-    char *path = malloc(PATH_MAX * sizeof(char));
-    if (path == NULL) {
-        perror("malloc");
-        return;
-    }
-    strcpy(path, args->server->root);
-    strcat(path, args->path);
 
-    static const char response[] =
-        "HTTP/1.1 200 OK\n"
-        "Content-Type: text/html\n";
-    char *send_buf = malloc(BUFSIZ * sizeof(char));
-    if (send_buf == NULL) {
-        free(path);
-        perror("malloc");
-        return;
-    }
-    strcpy(send_buf, response);
-    size_t size = sizeof response - 1;
-    open_file(send_buf, &size, path);
+    response_to_client(args);
 
-    DEBUG("res: %s", send_buf);
-    write(args->fd, send_buf, size);
-    free(path);
     free(buffer);
-    free(send_buf);
     close(args->fd);
     free(args);
+    return NULL;
 }

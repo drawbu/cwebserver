@@ -8,21 +8,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void *append_to_array(void *array, void *elem, size_t size)
-{
-    DEF_ARR(uint8_t) *arr = array;
-
-    if (arr->size + 1 > arr->alloc) {
-        arr->alloc = (arr->alloc) ? arr->alloc * arr->alloc : 2;
-        arr->arr = reallocarray(arr->arr, arr->alloc + 1, size);
-        if (arr->arr == NULL)
-            return NULL;
-    }
-    memcpy(arr->arr + (arr->size * size), elem, size);
-    arr->size += 1;
-    return array;
-}
-
 int main(int argc, char *argv[])
 {
     server_t serv = {0};

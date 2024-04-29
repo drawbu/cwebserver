@@ -3,8 +3,7 @@
 #include <linux/limits.h>
 #include <netinet/in.h>
 
-#define LENOF(x) (sizeof (x) / sizeof *(x))
-#define DEF_ARR(type) struct { size_t size, alloc; type *arr; }
+#include "utils.h"
 
 enum request_method_e {
     GET,
@@ -39,5 +38,5 @@ typedef struct {
     char *path;
 } request_t;
 
-void *append_to_array(void *array, void *elem, size_t size);
-void handle_client(request_t *args);
+void *handle_client(request_t *args);
+int response_to_client(request_t *args);
