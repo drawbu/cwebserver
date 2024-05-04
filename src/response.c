@@ -47,7 +47,14 @@ static char *open_file(size_t *size, const char *path, struct response_s *res)
             buffer[*size] = '\0';
         } else {
             DEBUG("Error: open %s", strerror(errno));
-            buffer = file_not_found(size);
+            DEBUG("Trying %sindex.html", path);
+            strcpy(buffer, path);
+            if (buffer[strlen(buffer) - 1] != '/')
+                strcat(buffer, "/");
+            strcat(buffer, "index.html");
+            char *e = open_file(size, buffer, res);
+            free(buffer);
+            return e;
         }
         close(fd);
     }
