@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <linux/limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,24 +21,34 @@ struct response_s
     DEF_ARR(header_t) headers;
 };
 
+static char *file_not_found(size_t *size)
+{
+    static const char err[] = "404 Not Found\r\n";
+    *size = sizeof err - 1;
+    return strdup(err);
+}
+
 static char *open_file(size_t *size, const char *path, struct response_s *res)
 {
-    static const char err[] = "404 Not Found\n";
-    char *buffer = malloc(BUFSIZ * sizeof(char));
-
-    if (buffer == NULL)
-        return perror("malloc"), NULL;
-
-    strcpy(buffer, err);
-    *size = sizeof err;
+    char *buffer = NULL;
 
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
         DEBUG("Error: open %s", strerror(errno));
+        buffer = file_not_found(size);
     } else {
+        buffer = malloc(BUFSIZ * sizeof(char));
+        if (buffer == NULL)
+            return perror("malloc"), NULL;
         DEBUG("file fd: %d", fd);
-        *size = read(fd, buffer, BUFSIZ);
-        buffer[*size] = '\0';
+        ssize_t r_size = read(fd, buffer, BUFSIZ);
+        if (r_size != -1) {
+            *size = r_size;
+            buffer[*size] = '\0';
+        } else {
+            DEBUG("Error: open %s", strerror(errno));
+            buffer = file_not_found(size);
+        }
         close(fd);
     }
 
@@ -126,11 +137,11 @@ int response_to_client(request_t *args)
 
     size_t filesize = 0;
     char *filebuf = open_file(&filesize, path, &res);
-    DEBUG("res: %s", filebuf);
 
     size_t send_size = 0;
     char *send_buf = create_response(filebuf, filesize, &res, &send_size);
     write(args->fd, send_buf, send_size);
+    DEBUG_DO(write(STDOUT_FILENO, send_buf, send_size));
 
     free(filebuf);
     free(send_buf);
